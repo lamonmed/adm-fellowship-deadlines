@@ -70,22 +70,12 @@
   .cat-recruitment { background: #EAF3DE; color: #3B6D11; }
   .cat-accreditation { background: var(--red-light); color: var(--red); }
   .cat-custom { background: var(--gray-light); color: var(--gray); }
-  .firebase-banner { background: #FFF8E1; border: 1px solid #F9A825; border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #5D4037; display: none; }
-  .firebase-banner.show { display: block; }
   .sync-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
-  .sync-live { background: var(--green); } .sync-local { background: var(--amber); }
+  .sync-live { background: var(--green); } .sync-connecting { background: var(--amber); }
   .sync-label { font-size: 12px; color: rgba(255,255,255,0.7); }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 999; }
-  .modal-overlay.hidden { display: none; }
-  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; max-width: 480px; width: 90%; }
-  .modal h2 { font-size: 18px; color: var(--blue-dark); margin-bottom: 10px; }
-  .modal p { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; }
-  .modal-btn { padding: 9px 20px; border-radius: var(--radius); border: none; cursor: pointer; font-size: 14px; font-family: inherit; font-weight: 500; margin-right: 8px; }
-  .modal-btn-primary { background: var(--blue-dark); color: #fff; }
-  .modal-btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
   .empty-state { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
-  .add-btn { margin-left: auto; padding: 6px 16px; background: var(--blue-dark); color: #fff; border: none; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
-  .add-btn:hover { background: var(--blue-mid); }
+  .add-btn { margin-left: auto; padding: 6px 16px; background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.3); border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; white-space: nowrap; flex-shrink: 0; }
+  .add-btn:hover { background: rgba(255,255,255,0.25); }
   .add-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 999; }
   .add-modal-overlay.hidden { display: none; }
   .add-modal { background: var(--surface); border-radius: var(--radius-lg); padding: 24px 28px; max-width: 500px; width: 92%; }
@@ -110,41 +100,38 @@
 <div class="topbar">
   <div>
     <div class="topbar-title">ADM Fellowship — ACGME Deadline Dashboard</div>
-    <div class="topbar-sub">Ventura County Medical Center &nbsp;|&nbsp; AY 2025-2026</div>
+    <div class="topbar-sub">Ventura County Medical Center  |  AY 2025–2026</div>
   </div>
   <div class="role-selector">
-    <span id="sync-indicator"><span class="sync-dot sync-local"></span><span class="sync-label">Local only</span></span>
-    &nbsp;&nbsp;
+    <span id="sync-indicator"><span class="sync-dot sync-connecting"></span><span class="sync-label">Connecting...</span></span>
+      
     <label for="roleSelect">Role:</label>
     <select id="roleSelect" onchange="setRole(this.value)">
       <option value="PD">Program Director</option>
       <option value="APD">Associate PD</option>
       <option value="MedEd">MedEd Staff</option>
     </select>
+    <button class="add-btn" onclick="showAddModal()">+ Add deadline</button>
   </div>
 </div>
-<div class="modal-overlay" id="setupModal">
-  <div class="modal">
-    <h2>Connect to Firebase for live sync</h2>
-    <p>This dashboard uses Firebase Firestore to sync check-offs and notes in real time across all stakeholders.</p>
-    <p><strong>1.</strong> Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue-mid)">console.firebase.google.com</a> &rarr; New project</p>
-    <p><strong>2.</strong> Build &rarr; Firestore Database &rarr; Create (test mode)</p>
-    <p><strong>3.</strong> Project Settings &rarr; Web app &rarr; Register &rarr; copy apiKey, projectId, appId</p>
-    <p><strong>4.</strong> Paste below and click Save.</p>
-    <div style="display:grid;gap:8px;margin-bottom:16px;">
-      <input id="fb-apiKey" placeholder="apiKey" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
-      <input id="fb-projectId" placeholder="projectId" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
-      <input id="fb-appId" placeholder="appId" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+<div class="add-modal-overlay hidden" id="addModal">
+  <div class="add-modal">
+    <h2>Add a deadline</h2>
+    <div class="form-row"><label>Title</label><input id="add-label" type="text" placeholder="e.g. New fellow onboarding paperwork"></div>
+    <div class="form-date-row">
+      <div class="form-row"><label>Month</label><select id="add-month"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+      <div class="form-row"><label>Day</label><input id="add-day" type="number" min="1" max="31" placeholder="15"></div>
     </div>
-    <button class="modal-btn modal-btn-primary" onclick="saveFirebaseConfig()">Save &amp; Connect</button>
-    <button class="modal-btn modal-btn-secondary" onclick="dismissSetup()">Skip (local only)</button>
+    <div class="form-row"><label>Category</label><select id="add-category"><option value="ads|ADS Update">ADS Update</option><option value="milestones|Milestones / CCC">Milestones / CCC</option><option value="surveys|Surveys">Surveys</option><option value="evaluation|Program Evaluation">Program Evaluation</option><option value="recruitment|Recruitment">Recruitment</option><option value="accreditation|Accreditation">Accreditation</option><option value="custom|Custom">Custom</option></select></div>
+    <div class="form-row"><label>Owner</label><input id="add-owner" type="text" placeholder="e.g. MedEd Staff, PD, APD"></div>
+    <div class="form-row"><label>Description (optional)</label><textarea id="add-desc" placeholder="Brief description..."></textarea></div>
+    <div class="form-actions">
+      <button class="form-btn form-btn-secondary" onclick="hideAddModal()">Cancel</button>
+      <button class="form-btn form-btn-primary" onclick="submitAddDeadline()">Add deadline</button>
+    </div>
   </div>
 </div>
 <div class="main">
-  <div class="firebase-banner" id="firebaseBanner">
-    <strong>Running in local-only mode</strong>
-    Data is saved in this browser only. To sync across stakeholders, <a href="#" onclick="showSetupModal();return false;" style="color:var(--blue-mid);font-weight:500;">Connect Firebase</a>.
-  </div>
   <div class="stats">
     <div class="stat-card"><div class="stat-label">Total deadlines</div><div class="stat-num" id="stat-total">22</div></div>
     <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-num green" id="stat-done">0</div></div>
@@ -162,86 +149,43 @@
     <button class="filter-btn" onclick="setFilter('recruitment',this)">Recruitment</button>
     <button class="filter-btn" onclick="setFilter('accreditation',this)">Accreditation</button>
     <button class="filter-btn" onclick="setFilter('pending',this)">Pending only</button>
-    <button class="add-btn" onclick="showAddModal()">+ Add deadline</button>
-  </div>
-  <div class="add-modal-overlay hidden" id="addModal">
-    <div class="add-modal">
-      <h2>Add a deadline</h2>
-      <div class="form-row">
-        <label>Title</label>
-        <input id="add-label" type="text" placeholder="e.g. New fellow onboarding paperwork">
-      </div>
-      <div class="form-date-row">
-        <div class="form-row">
-          <label>Month</label>
-          <select id="add-month">
-            <option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label>Day</label>
-          <input id="add-day" type="number" min="1" max="31" placeholder="15">
-        </div>
-      </div>
-      <div class="form-row">
-        <label>Category</label>
-        <select id="add-category">
-          <option value="ads|ADS Update">ADS Update</option>
-          <option value="milestones|Milestones / CCC">Milestones / CCC</option>
-          <option value="surveys|Surveys">Surveys</option>
-          <option value="evaluation|Program Evaluation">Program Evaluation</option>
-          <option value="recruitment|Recruitment">Recruitment</option>
-          <option value="accreditation|Accreditation">Accreditation</option>
-          <option value="custom|Custom">Custom</option>
-        </select>
-      </div>
-      <div class="form-row">
-        <label>Owner</label>
-        <input id="add-owner" type="text" placeholder="e.g. MedEd Staff, PD, APD">
-      </div>
-      <div class="form-row">
-        <label>Description (optional)</label>
-        <textarea id="add-desc" placeholder="Brief description of what needs to be done..."></textarea>
-      </div>
-      <div class="form-actions">
-        <button class="form-btn form-btn-secondary" onclick="hideAddModal()">Cancel</button>
-        <button class="form-btn form-btn-primary" onclick="submitAddDeadline()">Add deadline</button>
-      </div>
-    </div>
   </div>
   <div id="deadline-list"></div>
 </div>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-const DEADLINES=[{id:"jan-roster",month:1,day:1,label:"Update Fellow & Faculty Rosters in ADS",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Ensure rosters are current before surveys open in February."},{id:"feb-surveys-open",month:2,day:9,label:"Resident/Fellow & Faculty Surveys open",category:"surveys",catLabel:"Surveys",owner:"PD / APD",desc:"Annual ACGME surveys open Feb 9. Notify all trainees and faculty. Surveys close April 10."},{id:"feb-ccc",month:2,day:15,label:"Mid-year CCC meeting",category:"milestones",catLabel:"Milestones / CCC",owner:"PD / APD",desc:"Clinical Competency Committee meets to review mid-year trainee performance and milestone progress."},{id:"mar-milestones-open",month:3,day:15,label:"Mid-year Milestones submission window opens",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Semi-annual milestones reporting period opens. Submit via ADS for each enrolled fellow."},{id:"apr-surveys-close",month:4,day:10,label:"Resident/Fellow & Faculty Surveys close",category:"surveys",catLabel:"Surveys",owner:"PD / APD",desc:"Confirm participation threshold met. Aim for 70% response rate."},{id:"apr-milestones-due",month:4,day:15,label:"Mid-year Milestones submission deadline",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Typical spring window closes mid-April. Confirm exact date in ADS Important Dates column."},{id:"may-eras-open",month:5,day:1,label:"ERAS fellowship application cycle opens",category:"recruitment",catLabel:"Recruitment",owner:"MedEd Staff",desc:"Programs register and update program information in ERAS for the upcoming NRMP match cycle."},{id:"jun-milestones-close",month:6,day:27,label:"Spring Milestones reporting window closes",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Final deadline for spring milestones window. Verify in ADS Important Dates."},{id:"jun-credentials",month:6,day:30,label:"Program director credentials - annual verification",category:"accreditation",catLabel:"Accreditation",owner:"PD",desc:"Verify PD board certification, faculty credentials, and duty hour compliance documentation."},{id:"jul-onboard",month:7,day:1,label:"New academic year begins - fellow onboarding",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Add incoming fellows to ADS. New fellows eligible for milestones after 60 days."},{id:"jul-eras-apps",month:7,day:2,label:"ERAS applications available to programs",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Fellowship applicants begin applying through ERAS. Review on rolling basis."},{id:"jul-ads-open",month:7,day:15,label:"ADS Annual Update - program info window opens",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"2026-2027 ADS Annual Update begins July-September. Check ADS Important Dates."},{id:"aug-interviews",month:8,day:1,label:"Interview season begins",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Conduct fellowship interviews August-October for NRMP Medicine and Pediatrics Subspecialties Match."},{id:"sep-ape",month:9,day:30,label:"Annual Program Evaluation (APE) submission",category:"evaluation",catLabel:"Program Evaluation",owner:"PD / APD",desc:"PEC conducts APE and submits materials. Review prior year data, survey results, and milestones trends."},{id:"sep-ads-due",month:9,day:30,label:"ADS Annual Update - program information due",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Deadline for all program-level ADS Annual Update fields. Confirm specialty-specific date in ADS."},{id:"oct-pec",month:10,day:15,label:"Program Evaluation Committee (PEC) annual meeting",category:"evaluation",catLabel:"Program Evaluation",owner:"PD / APD",desc:"PEC meets at least annually. Document meeting, action items, and improvement plan. File with DIO."},{id:"nov-rank",month:11,day:1,label:"NRMP rank order list opens",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Programs enter rank order lists for Medicine and Pediatrics Subspecialties Match."},{id:"nov-ccc",month:11,day:15,label:"Year-end CCC meeting",category:"milestones",catLabel:"Milestones / CCC",owner:"PD / APD",desc:"Annual CCC meeting to review fellow performance, advancement, and remediation decisions."},{id:"nov-milestones-open",month:11,day:15,label:"Fall Milestones submission window opens",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Second semi-annual milestones reporting period opens. Submit via ADS."},{id:"dec-match",month:12,day:1,label:"NRMP Match Day - fellowship appointments",category:"recruitment",catLabel:"Recruitment",owner:"MedEd Staff",desc:"Match results released. Begin appointment paperwork for matched fellows."},{id:"dec-selfstudy",month:12,day:31,label:"Self-Study annual update (if cycle active)",category:"accreditation",catLabel:"Accreditation",owner:"PD",desc:"Integrate APE outcomes into Self-Study documentation. Submit summary to DIO."},{id:"jan-milestones-due",month:1,day:15,label:"Fall Milestones submission deadline",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Typical winter window closes mid-January. Confirm in ADS Important Dates."}];
-const CAT_CLASSES={surveys:"cat-surveys",milestones:"cat-milestones",ads:"cat-ads",evaluation:"cat-evaluation",recruitment:"cat-recruitment",accreditation:"cat-accreditation",custom:"cat-custom"};
-let state={},customDeadlines=[],currentFilter='all',currentRole='PD',db=null;
-function getToday(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
-function getNextDate(m,d){const today=getToday();let dt=new Date(today.getFullYear(),m-1,d);if(dt<today)dt=new Date(today.getFullYear()+1,m-1,d);return dt;}
-function daysUntil(m,d){return Math.round((getNextDate(m,d)-getToday())/86400000);}
-function countdownBadge(days){if(days<0)return`<span class="dl-countdown countdown-red">Overdue ${Math.abs(days)}d</span>`;if(days===0)return`<span class="dl-countdown countdown-red">Today</span>`;if(days<=14)return`<span class="dl-countdown countdown-red">In ${days}d</span>`;if(days<=60)return`<span class="dl-countdown countdown-amber">In ${days}d</span>`;return`<span class="dl-countdown countdown-gray">In ${days}d</span>`;}
-function formatDate(m,d){return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+d;}
-function saveLocal(){localStorage.setItem('adm_deadline_state',JSON.stringify(state));}
-function loadLocal(){try{const s=localStorage.getItem('adm_deadline_state');if(s)state=JSON.parse(s);}catch(e){}}
-function initFirebase(){const cfg=JSON.parse(localStorage.getItem('adm_firebase_config')||'null');if(!cfg||!cfg.apiKey){showLocalBanner();return;}try{const app=initializeApp(cfg);db=getFirestore(app);onSnapshot(collection(db,'deadlines'),(snap)=>{snap.forEach(ds=>{state[ds.id]=ds.data();});saveLocal();renderList();},()=>showLocalBanner());document.getElementById('sync-indicator').innerHTML='<span class="sync-dot sync-live"></span><span class="sync-label">Live sync</span>';initCustomDeadlines();}catch(e){showLocalBanner();}}
-async function saveToFirebase(id,data){if(!db)return;try{await setDoc(doc(db,'deadlines',id),data,{merge:true});}catch(e){}}
-function showLocalBanner(){document.getElementById('firebaseBanner').classList.add('show');}
-function initCustomDeadlines(){if(!db){const s=localStorage.getItem('adm_custom_deadlines');if(s)customDeadlines=JSON.parse(s);renderList();return;}onSnapshot(collection(db,'custom_deadlines'),(snap)=>{customDeadlines=snap.docs.map(d=>({...d.data(),firestoreId:d.id}));renderList();});}
-window.saveFirebaseConfig=function(){const apiKey=document.getElementById('fb-apiKey').value.trim();const projectId=document.getElementById('fb-projectId').value.trim();const appId=document.getElementById('fb-appId').value.trim();if(!apiKey||!projectId||!appId){alert('Please fill in all three fields.');return;}const cfg={apiKey,projectId,appId,authDomain:`${projectId}.firebaseapp.com`,storageBucket:`${projectId}.appspot.com`,messagingSenderId:''};localStorage.setItem('adm_firebase_config',JSON.stringify(cfg));document.getElementById('setupModal').classList.add('hidden');initFirebase();};
-window.dismissSetup=function(){document.getElementById('setupModal').classList.add('hidden');showLocalBanner();};
-window.showSetupModal=function(){document.getElementById('setupModal').classList.remove('hidden');};
-window.setRole=function(r){currentRole=r;};
-window.setFilter=function(f,btn){currentFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderList();};
-window.toggleComplete=async function(id){const s=state[id]||{};const was=s.completed||false;const nd={...s,completed:!was,completedBy:!was?currentRole:null,completedAt:!was?new Date().toISOString():null};state[id]=nd;saveLocal();await saveToFirebase(id,nd);renderList();};
-window.saveNote=async function(id){const input=document.getElementById('note-'+id);if(!input)return;const btn=document.getElementById('notebtn-'+id);if(btn){btn.disabled=true;btn.textContent='Saving...';}const note=input.value.trim();const s=state[id]||{};const nd={...s,note,noteBy:currentRole,noteAt:new Date().toISOString()};state[id]=nd;saveLocal();await saveToFirebase(id,nd);if(btn){btn.disabled=false;btn.textContent='Save';}const meta=document.getElementById('notemeta-'+id);if(meta)meta.innerHTML=`<span class="saved-indicator">Saved by ${currentRole}</span> - ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;};
-window.showAddModal=function(){document.getElementById('addModal').classList.remove('hidden');document.getElementById('add-label').focus();};
-window.hideAddModal=function(){document.getElementById('addModal').classList.add('hidden');['add-label','add-day','add-owner','add-desc'].forEach(id=>document.getElementById(id).value='');};
-window.submitAddDeadline=async function(){const label=document.getElementById('add-label').value.trim();const month=parseInt(document.getElementById('add-month').value);const day=parseInt(document.getElementById('add-day').value);const catVal=document.getElementById('add-category').value.split('|');const owner=document.getElementById('add-owner').value.trim()||currentRole;const desc=document.getElementById('add-desc').value.trim();if(!label){alert('Please enter a title.');return;}if(!day||day<1||day>31){alert('Please enter a valid day.');return;}const id='custom-'+Date.now();const entry={id,label,month,day,category:catVal[0],catLabel:catVal[1],owner,desc,custom:true,createdBy:currentRole,createdAt:new Date().toISOString()};if(db){await setDoc(doc(db,'custom_deadlines',id),entry);}else{customDeadlines.push(entry);localStorage.setItem('adm_custom_deadlines',JSON.stringify(customDeadlines));renderList();}hideAddModal();};
-window.deleteCustomDeadline=async function(id){if(!confirm('Remove this deadline?'))return;if(db){await deleteDoc(doc(db,'custom_deadlines',id));}else{customDeadlines=customDeadlines.filter(d=>d.id!==id);localStorage.setItem('adm_custom_deadlines',JSON.stringify(customDeadlines));renderList();}};
-function updateStats(){let done=0,soon=0,overdue=0,noted=0;[...DEADLINES,...customDeadlines].forEach(d=>{const s=state[d.id]||{};if(s.completed)done++;if(s.note)noted++;const days=daysUntil(d.month,d.day);if(!s.completed&&days<0)overdue++;else if(!s.completed&&days>=0&&days<=30)soon++;});document.getElementById('stat-total').textContent=DEADLINES.length+customDeadlines.length;document.getElementById('stat-done').textContent=done;document.getElementById('stat-soon').textContent=soon;document.getElementById('stat-overdue').textContent=overdue;document.getElementById('stat-noted').textContent=noted;}
-function renderList(){updateStats();const all=[...DEADLINES,...customDeadlines].map(d=>({...d,days:daysUntil(d.month,d.day)})).sort((a,b)=>a.days-b.days);const filtered=all.filter(d=>{if(currentFilter==='all')return true;if(currentFilter==='pending')return!(state[d.id]||{}).completed;return d.category===currentFilter;});if(filtered.length===0){document.getElementById('deadline-list').innerHTML='<div class="empty-state">No deadlines match this filter.</div>';return;}const groups=[{label:'Overdue',items:filtered.filter(d=>d.days<0)},{label:'Due within 30 days',items:filtered.filter(d=>d.days>=0&&d.days<=30)},{label:'Upcoming (31-90 days)',items:filtered.filter(d=>d.days>30&&d.days<=90)},{label:'Later this year',items:filtered.filter(d=>d.days>90)}];let html='';groups.forEach(g=>{if(g.items.length===0)return;html+=`<div class="section-header">${g.label} (${g.items.length})</div>`;g.items.forEach(d=>{const s=state[d.id]||{};const ic=s.completed||false;const note=s.note||'';const noteBy=s.noteBy||'';const noteAt=s.noteAt?new Date(s.noteAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';html+=`<div class="deadline-card ${ic?'completed':''}" id="card-${d.id}"><div class="dl-check-col"><input type="checkbox" class="dl-checkbox" ${ic?'checked':''} onchange="toggleComplete('${d.id}')"></div><div class="dl-date-col"><div class="dl-date">${formatDate(d.month,d.day)}</div>${countdownBadge(d.days)}</div><div class="dl-body"><div class="dl-top"><span class="cat-badge ${CAT_CLASSES[d.category]||'cat-custom'}">${d.catLabel}</span></div><div class="dl-task">${d.label}${d.custom?'<span class="custom-badge">Custom</span>':''}${d.custom?`<button class="delete-btn" onclick="deleteCustomDeadline('${d.id}')" title="Remove">x</button>`:''}</div><div class="dl-owner">Owner: ${d.owner}</div><div class="dl-desc">${d.desc||''}</div>${ic&&s.completedBy?`<div class="dl-meta-row"><span class="completed-by">Completed by ${s.completedBy}${s.completedAt?' - '+new Date(s.completedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}</span></div>`:''}<div class="notes-area"><textarea class="notes-input" id="note-${d.id}" rows="1" placeholder="Add a note (visible to all stakeholders)...">${note}</textarea><button class="save-btn" id="notebtn-${d.id}" onclick="saveNote('${d.id}')">Save</button></div>${note?`<div class="notes-meta" id="notemeta-${d.id}">Last updated by ${noteBy}${noteAt?' - '+noteAt:''}</div>`:`<div class="notes-meta" id="notemeta-${d.id}"></div>`}</div></div>`;});});document.getElementById('deadline-list').innerHTML=html;document.querySelectorAll('.notes-input').forEach(ta=>{ta.style.height='auto';ta.style.height=Math.max(36,ta.scrollHeight)+'px';ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.max(36,ta.scrollHeight)+'px';});});}
-function init(){loadLocal();const hasCfg=!!localStorage.getItem('adm_firebase_config');if(!hasCfg){document.getElementById('setupModal').classList.remove('hidden');}else{document.getElementById('setupModal').classList.add('hidden');initFirebase();}if(!db)initCustomDeadlines();renderList();}
+const FIREBASE_CONFIG={apiKey:"AIzaSyA2V4uwgE6vTbVPKo26CaXivsdugvSloeA",authDomain:"adm-fellowship.firebaseapp.com",projectId:"adm-fellowship",storageBucket:"adm-fellowship.appspot.com",messagingSenderId:"259378002634",appId:"1:259378002634:web:88a28d65c388ede4315233"};
+const DEADLINES=[{id:"jan-roster",month:1,day:1,label:"Update Fellow & Faculty Rosters in ADS",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Ensure rosters are current before surveys open in February."},{id:"feb-surveys-open",month:2,day:9,label:"Resident/Fellow & Faculty Surveys open",category:"surveys",catLabel:"Surveys",owner:"PD / APD",desc:"Annual ACGME surveys open Feb 9. Notify all trainees and faculty. Surveys close April 10."},{id:"feb-ccc",month:2,day:15,label:"Mid-year CCC meeting",category:"milestones",catLabel:"Milestones / CCC",owner:"PD / APD",desc:"Clinical Competency Committee meets to review mid-year trainee performance."},{id:"mar-milestones-open",month:3,day:15,label:"Mid-year Milestones submission window opens",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Semi-annual milestones reporting period opens. Submit via ADS."},{id:"apr-surveys-close",month:4,day:10,label:"Resident/Fellow & Faculty Surveys close",category:"surveys",catLabel:"Surveys",owner:"PD / APD",desc:"Confirm participation threshold met. Aim for 70% response rate."},{id:"apr-milestones-due",month:4,day:15,label:"Mid-year Milestones submission deadline",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Typical spring window closes mid-April. Confirm exact date in ADS."},{id:"may-eras-open",month:5,day:1,label:"ERAS fellowship application cycle opens",category:"recruitment",catLabel:"Recruitment",owner:"MedEd Staff",desc:"Programs register and update program information in ERAS."},{id:"jun-milestones-close",month:6,day:27,label:"Spring Milestones reporting window closes",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Final deadline for spring milestones window. Verify in ADS."},{id:"jun-credentials",month:6,day:30,label:"Program director credentials - annual verification",category:"accreditation",catLabel:"Accreditation",owner:"PD",desc:"Verify PD board certification, faculty credentials, and duty hour compliance."},{id:"jul-onboard",month:7,day:1,label:"New academic year begins - fellow onboarding",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Add incoming fellows to ADS. New fellows eligible for milestones after 60 days."},{id:"jul-eras-apps",month:7,day:2,label:"ERAS applications available to programs",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Fellowship applicants begin applying through ERAS."},{id:"jul-ads-open",month:7,day:15,label:"ADS Annual Update - program info window opens",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"ADS Annual Update collection begins July-September."},{id:"aug-interviews",month:8,day:1,label:"Interview season begins",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Conduct fellowship interviews August-October for NRMP Match."},{id:"sep-ape",month:9,day:30,label:"Annual Program Evaluation (APE) submission",category:"evaluation",catLabel:"Program Evaluation",owner:"PD / APD",desc:"PEC conducts APE and submits materials."},{id:"sep-ads-due",month:9,day:30,label:"ADS Annual Update - program information due",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Deadline for all program-level ADS Annual Update fields."},{id:"oct-pec",month:10,day:15,label:"Program Evaluation Committee (PEC) annual meeting",category:"evaluation",catLabel:"Program Evaluation",owner:"PD / APD",desc:"PEC meets at least annually. Document meeting and improvement plan."},{id:"nov-rank",month:11,day:1,label:"NRMP rank order list opens",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Programs enter rank order lists for Medicine and Pediatrics Match."},{id:"nov-ccc",month:11,day:15,label:"Year-end CCC meeting",category:"milestones",catLabel:"Milestones / CCC",owner:"PD / APD",desc:"Annual CCC meeting to review fellow performance and advancement."},{id:"nov-milestones-open",month:11,day:15,label:"Fall Milestones submission window opens",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Second semi-annual milestones reporting period opens."},{id:"dec-match",month:12,day:1,label:"NRMP Match Day - fellowship appointments",category:"recruitment",catLabel:"Recruitment",owner:"MedEd Staff",desc:"Match results released. Begin appointment paperwork."},{id:"dec-selfstudy",month:12,day:31,label:"Self-Study annual update (if cycle active)",category:"accreditation",catLabel:"Accreditation",owner:"PD",desc:"Integrate APE outcomes into Self-Study documentation."},{id:"jan-milestones-due",month:1,day:15,label:"Fall Milestones submission deadline",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Typical winter window closes mid-January. Confirm in ADS."}];
+const CAT={surveys:"cat-surveys",milestones:"cat-milestones",ads:"cat-ads",evaluation:"cat-evaluation",recruitment:"cat-recruitment",accreditation:"cat-accreditation",custom:"cat-custom"};
+let state={},custom=[],filter='all',role='PD',db=null;
+function today(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
+function next(m,d){const t=today();let dt=new Date(t.getFullYear(),m-1,d);if(dt<t)dt=new Date(t.getFullYear()+1,m-1,d);return dt;}
+function days(m,d){return Math.round((next(m,d)-today())/86400000);}
+function badge(n){if(n<0)return`<span class="dl-countdown countdown-red">Overdue ${Math.abs(n)}d</span>`;if(n===0)return'<span class="dl-countdown countdown-red">Today</span>';if(n<=14)return`<span class="dl-countdown countdown-red">In ${n}d</span>`;if(n<=60)return`<span class="dl-countdown countdown-amber">In ${n}d</span>`;return`<span class="dl-countdown countdown-gray">In ${n}d</span>`;}
+function fmt(m,d){return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+d;}
+function saveLocal(){try{localStorage.setItem('adm_s',JSON.stringify(state));}catch(e){}}
+function loadLocal(){try{const s=localStorage.getItem('adm_s');if(s)state=JSON.parse(s);}catch(e){}}
+async function toFB(id,data){if(!db)return;try{await setDoc(doc(db,'deadlines',id),data,{merge:true});}catch(e){}}
+function init(){
+  loadLocal();renderList();
+  try{
+    const app=initializeApp(FIREBASE_CONFIG);db=getFirestore(app);
+    onSnapshot(collection(db,'deadlines'),(snap)=>{snap.forEach(ds=>{state[ds.id]=ds.data();});saveLocal();renderList();});
+    onSnapshot(collection(db,'custom_deadlines'),(snap)=>{custom=snap.docs.map(d=>({...d.data()}));renderList();});
+    document.getElementById('sync-indicator').innerHTML='<span class="sync-dot sync-live"></span><span class="sync-label">Live sync</span>';
+  }catch(e){document.getElementById('sync-indicator').innerHTML='<span class="sync-dot sync-connecting"></span><span class="sync-label">Offline</span>';}
+}
+window.setRole=r=>{role=r;};
+window.setFilter=(f,btn)=>{filter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderList();};
+window.toggleComplete=async id=>{const s=state[id]||{};const was=s.completed||false;const nd={...s,completed:!was,completedBy:!was?role:null,completedAt:!was?new Date().toISOString():null};state[id]=nd;saveLocal();await toFB(id,nd);renderList();};
+window.saveNote=async id=>{const inp=document.getElementById('note-'+id);if(!inp)return;const btn=document.getElementById('nb-'+id);if(btn){btn.disabled=true;btn.textContent='Saving...';}const note=inp.value.trim();const s=state[id]||{};const nd={...s,note,noteBy:role,noteAt:new Date().toISOString()};state[id]=nd;saveLocal();await toFB(id,nd);if(btn){btn.disabled=false;btn.textContent='Save';}const meta=document.getElementById('nm-'+id);if(meta)meta.innerHTML=`<span class="saved-indicator">Saved by ${role}</span> - ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;};
+window.showAddModal=()=>{document.getElementById('addModal').classList.remove('hidden');document.getElementById('add-label').focus();};
+window.hideAddModal=()=>{document.getElementById('addModal').classList.add('hidden');['add-label','add-day','add-owner','add-desc'].forEach(id=>document.getElementById(id).value='');};
+window.submitAddDeadline=async()=>{const label=document.getElementById('add-label').value.trim();const month=parseInt(document.getElementById('add-month').value);const day=parseInt(document.getElementById('add-day').value);const cv=document.getElementById('add-category').value.split('|');const owner=document.getElementById('add-owner').value.trim()||role;const desc=document.getElementById('add-desc').value.trim();if(!label){alert('Please enter a title.');return;}if(!day||day<1||day>31){alert('Please enter a valid day.');return;}const id='custom-'+Date.now();const entry={id,label,month,day,category:cv[0],catLabel:cv[1],owner,desc,custom:true,createdBy:role,createdAt:new Date().toISOString()};if(db){await setDoc(doc(db,'custom_deadlines',id),entry);}else{custom.push(entry);renderList();}hideAddModal();};
+window.deleteCustom=async id=>{if(!confirm('Remove this deadline?'))return;if(db){await deleteDoc(doc(db,'custom_deadlines',id));}else{custom=custom.filter(d=>d.id!==id);renderList();}};
+function updateStats(){let done=0,soon=0,over=0,noted=0;[...DEADLINES,...custom].forEach(d=>{const s=state[d.id]||{};if(s.completed)done++;if(s.note)noted++;const n=days(d.month,d.day);if(!s.completed&&n<0)over++;else if(!s.completed&&n>=0&&n<=30)soon++;});document.getElementById('stat-total').textContent=DEADLINES.length+custom.length;document.getElementById('stat-done').textContent=done;document.getElementById('stat-soon').textContent=soon;document.getElementById('stat-overdue').textContent=over;document.getElementById('stat-noted').textContent=noted;}
+function renderList(){updateStats();const all=[...DEADLINES,...custom].map(d=>({...d,n:days(d.month,d.day)})).sort((a,b)=>a.n-b.n);const fil=all.filter(d=>{if(filter==='all')return true;if(filter==='pending')return!(state[d.id]||{}).completed;return d.category===filter;});if(!fil.length){document.getElementById('deadline-list').innerHTML='<div class="empty-state">No deadlines match this filter.</div>';return;}const groups=[{label:'Overdue',items:fil.filter(d=>d.n<0)},{label:'Due within 30 days',items:fil.filter(d=>d.n>=0&&d.n<=30)},{label:'Upcoming (31-90 days)',items:fil.filter(d=>d.n>30&&d.n<=90)},{label:'Later this year',items:fil.filter(d=>d.n>90)}];let html='';groups.forEach(g=>{if(!g.items.length)return;html+=`<div class="section-header">${g.label} (${g.items.length})</div>`;g.items.forEach(d=>{const s=state[d.id]||{};const ic=s.completed||false;const note=s.note||'';const nb=s.noteBy||'';const na=s.noteAt?new Date(s.noteAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';html+=`<div class="deadline-card ${ic?'completed':''}" id="card-${d.id}"><div class="dl-check-col"><input type="checkbox" class="dl-checkbox" ${ic?'checked':''} onchange="toggleComplete('${d.id}')"></div><div class="dl-date-col"><div class="dl-date">${fmt(d.month,d.day)}</div>${badge(d.n)}</div><div class="dl-body"><div class="dl-top"><span class="cat-badge ${CAT[d.category]||'cat-custom'}">${d.catLabel}</span></div><div class="dl-task">${d.label}${d.custom?'<span class="custom-badge">Custom</span>':''}${d.custom?`<button class="delete-btn" onclick="deleteCustom('${d.id}')">x</button>`:''}</div><div class="dl-owner">Owner: ${d.owner}</div><div class="dl-desc">${d.desc||''}</div>${ic&&s.completedBy?`<div class="dl-meta-row"><span class="completed-by">Completed by ${s.completedBy}${s.completedAt?' - '+new Date(s.completedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}</span></div>`:''}<div class="notes-area"><textarea class="notes-input" id="note-${d.id}" rows="1" placeholder="Add a note (visible to all stakeholders)...">${note}</textarea><button class="save-btn" id="nb-${d.id}" onclick="saveNote('${d.id}')">Save</button></div>${note?`<div class="notes-meta" id="nm-${d.id}">Last updated by ${nb}${na?' - '+na:''}</div>`:`<div class="notes-meta" id="nm-${d.id}"></div>`}</div></div>`;});});document.getElementById('deadline-list').innerHTML=html;document.querySelectorAll('.notes-input').forEach(ta=>{ta.style.height='auto';ta.style.height=Math.max(36,ta.scrollHeight)+'px';ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.max(36,ta.scrollHeight)+'px';});});}
 document.addEventListener('DOMContentLoaded',init);
 </script>
 </body>
