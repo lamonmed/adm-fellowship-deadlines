@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADM Fellowship — ACGME Deadline Dashboard</title>
+<style>
+  :root {
+    --blue-dark: #1F4E79; --blue-mid: #2E75B6; --blue-light: #EBF3FB;
+    --green: #0F6E56; --green-light: #E1F5EE; --purple: #534AB7; --purple-light: #EEEDFE;
+    --amber: #854F0B; --amber-light: #FAEEDA; --red: #A32D2D; --red-light: #FCEBEB;
+    --teal: #0F6E56; --teal-light: #E1F5EE; --gray: #5F5E5A; --gray-light: #F1EFE8;
+    --bg: #F7F9FC; --surface: #FFFFFF; --border: #E0E7EF; --text: #1A1A2E; --text-muted: #6B7280;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  .topbar { background: var(--blue-dark); color: #fff; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+  .topbar-title { font-size: 16px; font-weight: 600; }
+  .topbar-sub { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .role-selector { display: flex; align-items: center; gap: 10px; }
+  .role-selector label { font-size: 13px; opacity: 0.85; }
+  .role-selector select { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 5px 10px; border-radius: var(--radius); font-size: 13px; cursor: pointer; }
+  .role-selector select option { background: var(--blue-dark); color: #fff; }
+  .main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; }
+  .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+  .stat-num { font-size: 26px; font-weight: 600; color: var(--blue-dark); }
+  .stat-num.green { color: var(--green); } .stat-num.amber { color: var(--amber); } .stat-num.red { color: var(--red); }
+  .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; align-items: center; }
+  .filter-label { font-size: 13px; color: var(--text-muted); margin-right: 4px; }
+  .filter-btn { padding: 5px 14px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-size: 13px; cursor: pointer; transition: all 0.15s; }
+  .filter-btn:hover { border-color: var(--blue-mid); color: var(--blue-dark); }
+  .filter-btn.active { background: var(--blue-dark); color: #fff; border-color: var(--blue-dark); font-weight: 500; }
+  .section-header { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 20px 0 8px; padding-left: 4px; }
+  .deadline-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 8px; display: flex; gap: 14px; align-items: flex-start; transition: box-shadow 0.15s; }
+  .deadline-card:hover { box-shadow: 0 2px 10px rgba(31,78,121,0.08); }
+  .deadline-card.completed { opacity: 0.55; } .deadline-card.completed .dl-task { text-decoration: line-through; }
+  .dl-check-col { flex-shrink: 0; padding-top: 2px; }
+  .dl-checkbox { width: 20px; height: 20px; border-radius: 5px; border: 2px solid var(--border); appearance: none; cursor: pointer; transition: all 0.15s; position: relative; }
+  .dl-checkbox:checked { background: var(--green); border-color: var(--green); }
+  .dl-checkbox:checked::after { content: ''; position: absolute; left: 4px; top: 1px; width: 8px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg); }
+  .dl-date-col { flex-shrink: 0; min-width: 90px; }
+  .dl-date { font-size: 13px; font-weight: 600; color: var(--blue-dark); }
+  .dl-countdown { font-size: 11px; margin-top: 3px; padding: 2px 7px; border-radius: 99px; display: inline-block; }
+  .countdown-red { background: var(--red-light); color: var(--red); }
+  .countdown-amber { background: var(--amber-light); color: var(--amber); }
+  .countdown-gray { background: var(--gray-light); color: var(--gray); }
+  .dl-body { flex: 1; min-width: 0; }
+  .dl-top { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+  .dl-task { font-size: 14px; font-weight: 500; color: var(--text); }
+  .cat-badge { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 99px; white-space: nowrap; flex-shrink: 0; }
+  .dl-owner { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+  .dl-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px; }
+  .notes-area { display: flex; gap: 8px; align-items: flex-start; }
+  .notes-input { flex: 1; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 10px; resize: none; min-height: 36px; color: var(--text); background: var(--bg); font-family: inherit; transition: border-color 0.15s; }
+  .notes-input:focus { outline: none; border-color: var(--blue-mid); background: #fff; }
+  .notes-input::placeholder { color: #B0B8C4; }
+  .save-btn { font-size: 12px; padding: 7px 14px; background: var(--blue-dark); color: #fff; border: none; border-radius: var(--radius); cursor: pointer; white-space: nowrap; font-family: inherit; }
+  .save-btn:hover { background: var(--blue-mid); } .save-btn:disabled { background: #B0B8C4; cursor: not-allowed; }
+  .notes-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .saved-indicator { color: var(--green); }
+  .dl-meta-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .completed-by { font-size: 11px; color: var(--green); font-weight: 500; }
+  .cat-surveys { background: var(--teal-light); color: var(--teal); }
+  .cat-milestones { background: var(--purple-light); color: var(--purple); }
+  .cat-ads { background: var(--blue-light); color: var(--blue-dark); }
+  .cat-evaluation { background: var(--amber-light); color: var(--amber); }
+  .cat-recruitment { background: #EAF3DE; color: #3B6D11; }
+  .cat-accreditation { background: var(--red-light); color: var(--red); }
+  .firebase-banner { background: #FFF8E1; border: 1px solid #F9A825; border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #5D4037; display: none; }
+  .firebase-banner.show { display: block; }
+  .sync-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .sync-live { background: var(--green); } .sync-local { background: var(--amber); }
+  .sync-label { font-size: 12px; color: rgba(255,255,255,0.7); }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 999; }
+  .modal-overlay.hidden { display: none; }
+  .modal { background: var(--surface); border-radius: var(--radius-lg); padding: 28px 32px; max-width: 480px; width: 90%; }
+  .modal h2 { font-size: 18px; color: var(--blue-dark); margin-bottom: 10px; }
+  .modal p { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px; }
+  .modal-btn { padding: 9px 20px; border-radius: var(--radius); border: none; cursor: pointer; font-size: 14px; font-family: inherit; font-weight: 500; margin-right: 8px; }
+  .modal-btn-primary { background: var(--blue-dark); color: #fff; }
+  .modal-btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+  .empty-state { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div>
+    <div class="topbar-title">ADM Fellowship — ACGME Deadline Dashboard</div>
+    <div class="topbar-sub">Ventura County Medical Center &nbsp;|&nbsp; AY 2025–2026</div>
+  </div>
+  <div class="role-selector">
+    <span id="sync-indicator"><span class="sync-dot sync-local"></span><span class="sync-label">Local only</span></span>
+    &nbsp;&nbsp;
+    <label for="roleSelect">Role:</label>
+    <select id="roleSelect" onchange="setRole(this.value)">
+      <option value="PD">Program Director</option>
+      <option value="APD">Associate PD</option>
+      <option value="MedEd">MedEd Staff</option>
+    </select>
+  </div>
+</div>
+<div class="modal-overlay" id="setupModal">
+  <div class="modal">
+    <h2>Connect to Firebase for live sync</h2>
+    <p>This dashboard uses Firebase Firestore to sync check-offs and notes in real time across all stakeholders.</p>
+    <p><strong>1.</strong> Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--blue-mid)">console.firebase.google.com</a> &rarr; New project</p>
+    <p><strong>2.</strong> Build &rarr; Firestore Database &rarr; Create (test mode)</p>
+    <p><strong>3.</strong> Project Settings &rarr; Web app &rarr; Register &rarr; copy apiKey, projectId, appId</p>
+    <p><strong>4.</strong> Paste below and click Save.</p>
+    <div style="display:grid;gap:8px;margin-bottom:16px;">
+      <input id="fb-apiKey" placeholder="apiKey" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+      <input id="fb-projectId" placeholder="projectId" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+      <input id="fb-appId" placeholder="appId" style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;">
+    </div>
+    <button class="modal-btn modal-btn-primary" onclick="saveFirebaseConfig()">Save &amp; Connect</button>
+    <button class="modal-btn modal-btn-secondary" onclick="dismissSetup()">Skip (local only)</button>
+  </div>
+</div>
+<div class="main">
+  <div class="firebase-banner" id="firebaseBanner">
+    <strong>&#9888; Running in local-only mode</strong>
+    Data is saved in this browser only. To sync across stakeholders, <a href="#" onclick="showSetupModal();return false;" style="color:var(--blue-mid);font-weight:500;">Connect Firebase</a>.
+  </div>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-label">Total deadlines</div><div class="stat-num" id="stat-total">22</div></div>
+    <div class="stat-card"><div class="stat-label">Completed</div><div class="stat-num green" id="stat-done">0</div></div>
+    <div class="stat-card"><div class="stat-label">Due within 30 days</div><div class="stat-num amber" id="stat-soon">0</div></div>
+    <div class="stat-card"><div class="stat-label">Overdue</div><div class="stat-num red" id="stat-overdue">0</div></div>
+    <div class="stat-card"><div class="stat-label">With notes</div><div class="stat-num" id="stat-noted" style="color:var(--blue-mid)">0</div></div>
+  </div>
+  <div class="filters">
+    <span class="filter-label">Filter:</span>
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('surveys',this)">Surveys</button>
+    <button class="filter-btn" onclick="setFilter('milestones',this)">Milestones / CCC</button>
+    <button class="filter-btn" onclick="setFilter('ads',this)">ADS Updates</button>
+    <button class="filter-btn" onclick="setFilter('evaluation',this)">Program Evaluation</button>
+    <button class="filter-btn" onclick="setFilter('recruitment',this)">Recruitment</button>
+    <button class="filter-btn" onclick="setFilter('accreditation',this)">Accreditation</button>
+    <button class="filter-btn" onclick="setFilter('pending',this)">Pending only</button>
+  </div>
+  <div id="deadline-list"></div>
+</div>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, doc, setDoc, onSnapshot, collection } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+const DEADLINES=[{id:"jan-roster",month:1,day:1,label:"Update Fellow & Faculty Rosters in ADS",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Ensure rosters are current before surveys open in February."},{id:"feb-surveys-open",month:2,day:9,label:"Resident/Fellow & Faculty Surveys open",category:"surveys",catLabel:"Surveys",owner:"PD / APD",desc:"Annual ACGME surveys open Feb 9. Notify all trainees and faculty. Surveys close April 10."},{id:"feb-ccc",month:2,day:15,label:"Mid-year CCC meeting",category:"milestones",catLabel:"Milestones / CCC",owner:"PD / APD",desc:"Clinical Competency Committee meets to review mid-year trainee performance and milestone progress."},{id:"mar-milestones-open",month:3,day:15,label:"Mid-year Milestones submission window opens",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Semi-annual milestones reporting period opens. Submit via ADS for each enrolled fellow."},{id:"apr-surveys-close",month:4,day:10,label:"Resident/Fellow & Faculty Surveys close",category:"surveys",catLabel:"Surveys",owner:"PD / APD",desc:"Confirm participation threshold met. Aim for 70% response rate."},{id:"apr-milestones-due",month:4,day:15,label:"Mid-year Milestones submission deadline",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Typical spring window closes mid-April. Confirm exact date in ADS Important Dates column."},{id:"may-eras-open",month:5,day:1,label:"ERAS fellowship application cycle opens",category:"recruitment",catLabel:"Recruitment",owner:"MedEd Staff",desc:"Programs register and update program information in ERAS for the upcoming NRMP match cycle."},{id:"jun-milestones-close",month:6,day:27,label:"Spring Milestones reporting window closes",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Final deadline for spring milestones window. Verify in ADS Important Dates."},{id:"jun-credentials",month:6,day:30,label:"Program director credentials - annual verification",category:"accreditation",catLabel:"Accreditation",owner:"PD",desc:"Verify PD board certification, faculty credentials, and duty hour compliance documentation."},{id:"jul-onboard",month:7,day:1,label:"New academic year begins - fellow onboarding",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Add incoming fellows to ADS. New fellows eligible for milestones after 60 days."},{id:"jul-eras-apps",month:7,day:2,label:"ERAS applications available to programs",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Fellowship applicants begin applying through ERAS. Review on rolling basis."},{id:"jul-ads-open",month:7,day:15,label:"ADS Annual Update - program info window opens",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"2026-2027 ADS Annual Update begins July-September. Check ADS Important Dates for your specialty window."},{id:"aug-interviews",month:8,day:1,label:"Interview season begins",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Conduct fellowship interviews August-October for NRMP Medicine and Pediatrics Subspecialties Match."},{id:"sep-ape",month:9,day:30,label:"Annual Program Evaluation (APE) submission",category:"evaluation",catLabel:"Program Evaluation",owner:"PD / APD",desc:"PEC conducts APE and submits materials. Review prior year data, survey results, and milestones trends."},{id:"sep-ads-due",month:9,day:30,label:"ADS Annual Update - program information due",category:"ads",catLabel:"ADS Update",owner:"MedEd Staff",desc:"Deadline for all program-level ADS Annual Update fields. Confirm specialty-specific date in ADS."},{id:"oct-pec",month:10,day:15,label:"Program Evaluation Committee (PEC) annual meeting",category:"evaluation",catLabel:"Program Evaluation",owner:"PD / APD",desc:"PEC meets at least annually. Document meeting, action items, and improvement plan. File with DIO."},{id:"nov-rank",month:11,day:1,label:"NRMP rank order list opens",category:"recruitment",catLabel:"Recruitment",owner:"PD / APD",desc:"Programs enter rank order lists for Medicine and Pediatrics Subspecialties Match."},{id:"nov-ccc",month:11,day:15,label:"Year-end CCC meeting",category:"milestones",catLabel:"Milestones / CCC",owner:"PD / APD",desc:"Annual CCC meeting to review fellow performance, advancement, and remediation decisions."},{id:"nov-milestones-open",month:11,day:15,label:"Fall Milestones submission window opens",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Second semi-annual milestones reporting period opens. Submit via ADS."},{id:"dec-match",month:12,day:1,label:"NRMP Match Day - fellowship appointments",category:"recruitment",catLabel:"Recruitment",owner:"MedEd Staff",desc:"Match results released. Begin appointment paperwork for matched fellows."},{id:"dec-selfstudy",month:12,day:31,label:"Self-Study annual update (if cycle active)",category:"accreditation",catLabel:"Accreditation",owner:"PD",desc:"Integrate APE outcomes into Self-Study documentation. Submit summary to DIO."},{id:"jan-milestones-due",month:1,day:15,label:"Fall Milestones submission deadline",category:"milestones",catLabel:"Milestones / CCC",owner:"MedEd Staff",desc:"Typical winter window closes mid-January. Confirm in ADS Important Dates."}];
+const CAT_CLASSES={surveys:"cat-surveys",milestones:"cat-milestones",ads:"cat-ads",evaluation:"cat-evaluation",recruitment:"cat-recruitment",accreditation:"cat-accreditation"};
+let state={},currentFilter='all',currentRole='PD',db=null;
+function getToday(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
+function getNextDate(m,d){const today=getToday();let dt=new Date(today.getFullYear(),m-1,d);if(dt<today)dt=new Date(today.getFullYear()+1,m-1,d);return dt;}
+function daysUntil(m,d){return Math.round((getNextDate(m,d)-getToday())/86400000);}
+function countdownBadge(days){if(days<0)return`<span class="dl-countdown countdown-red">Overdue ${Math.abs(days)}d</span>`;if(days===0)return`<span class="dl-countdown countdown-red">Today</span>`;if(days<=14)return`<span class="dl-countdown countdown-red">In ${days}d</span>`;if(days<=60)return`<span class="dl-countdown countdown-amber">In ${days}d</span>`;return`<span class="dl-countdown countdown-gray">In ${days}d</span>`;}
+function formatDate(m,d){return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1]+' '+d;}
+function saveLocal(){localStorage.setItem('adm_deadline_state',JSON.stringify(state));}
+function loadLocal(){try{const s=localStorage.getItem('adm_deadline_state');if(s)state=JSON.parse(s);}catch(e){}}
+function initFirebase(){const cfg=JSON.parse(localStorage.getItem('adm_firebase_config')||'null');if(!cfg||!cfg.apiKey){showLocalBanner();return;}try{const app=initializeApp(cfg);db=getFirestore(app);const col=collection(db,'deadlines');onSnapshot(col,(snap)=>{snap.forEach(ds=>{state[ds.id]=ds.data();});saveLocal();renderList();},()=>showLocalBanner());document.getElementById('sync-indicator').innerHTML='<span class="sync-dot sync-live"></span><span class="sync-label">Live sync</span>';}catch(e){showLocalBanner();}}
+async function saveToFirebase(id,data){if(!db)return;try{await setDoc(doc(db,'deadlines',id),data,{merge:true});}catch(e){}}
+function showLocalBanner(){document.getElementById('firebaseBanner').classList.add('show');}
+window.saveFirebaseConfig=function(){const apiKey=document.getElementById('fb-apiKey').value.trim();const projectId=document.getElementById('fb-projectId').value.trim();const appId=document.getElementById('fb-appId').value.trim();if(!apiKey||!projectId||!appId){alert('Please fill in all three fields.');return;}const cfg={apiKey,projectId,appId,authDomain:`${projectId}.firebaseapp.com`,storageBucket:`${projectId}.appspot.com`,messagingSenderId:''};localStorage.setItem('adm_firebase_config',JSON.stringify(cfg));document.getElementById('setupModal').classList.add('hidden');initFirebase();};
+window.dismissSetup=function(){document.getElementById('setupModal').classList.add('hidden');showLocalBanner();};
+window.showSetupModal=function(){document.getElementById('setupModal').classList.remove('hidden');};
+window.setRole=function(r){currentRole=r;};
+window.setFilter=function(f,btn){currentFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderList();};
+window.toggleComplete=async function(id){const s=state[id]||{};const was=s.completed||false;const nd={...s,completed:!was,completedBy:!was?currentRole:null,completedAt:!was?new Date().toISOString():null};state[id]=nd;saveLocal();await saveToFirebase(id,nd);renderList();};
+window.saveNote=async function(id){const input=document.getElementById('note-'+id);if(!input)return;const btn=document.getElementById('notebtn-'+id);if(btn){btn.disabled=true;btn.textContent='Saving...';}const note=input.value.trim();const s=state[id]||{};const nd={...s,note,noteBy:currentRole,noteAt:new Date().toISOString()};state[id]=nd;saveLocal();await saveToFirebase(id,nd);if(btn){btn.disabled=false;btn.textContent='Save';}const meta=document.getElementById('notemeta-'+id);if(meta)meta.innerHTML=`<span class="saved-indicator">Saved by ${currentRole}</span> - ${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;};
+function updateStats(){let done=0,soon=0,overdue=0,noted=0;DEADLINES.forEach(d=>{const s=state[d.id]||{};if(s.completed)done++;if(s.note)noted++;const days=daysUntil(d.month,d.day);if(!s.completed&&days<0)overdue++;else if(!s.completed&&days>=0&&days<=30)soon++;});document.getElementById('stat-total').textContent=DEADLINES.length;document.getElementById('stat-done').textContent=done;document.getElementById('stat-soon').textContent=soon;document.getElementById('stat-overdue').textContent=overdue;document.getElementById('stat-noted').textContent=noted;}
+function renderList(){updateStats();const sorted=[...DEADLINES].map(d=>({...d,days:daysUntil(d.month,d.day)})).sort((a,b)=>a.days-b.days);const filtered=sorted.filter(d=>{if(currentFilter==='all')return true;if(currentFilter==='pending')return!(state[d.id]||{}).completed;return d.category===currentFilter;});if(filtered.length===0){document.getElementById('deadline-list').innerHTML='<div class="empty-state">No deadlines match this filter.</div>';return;}const groups=[{label:'Overdue',items:filtered.filter(d=>d.days<0)},{label:'Due within 30 days',items:filtered.filter(d=>d.days>=0&&d.days<=30)},{label:'Upcoming (31-90 days)',items:filtered.filter(d=>d.days>30&&d.days<=90)},{label:'Later this year',items:filtered.filter(d=>d.days>90)}];let html='';groups.forEach(g=>{if(g.items.length===0)return;html+=`<div class="section-header">${g.label} (${g.items.length})</div>`;g.items.forEach(d=>{const s=state[d.id]||{};const ic=s.completed||false;const note=s.note||'';const noteBy=s.noteBy||'';const noteAt=s.noteAt?new Date(s.noteAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';html+=`<div class="deadline-card ${ic?'completed':''}" id="card-${d.id}"><div class="dl-check-col"><input type="checkbox" class="dl-checkbox" ${ic?'checked':''} onchange="toggleComplete('${d.id}')" title="${ic?'Mark incomplete':'Mark complete'}"></div><div class="dl-date-col"><div class="dl-date">${formatDate(d.month,d.day)}</div>${countdownBadge(d.days)}</div><div class="dl-body"><div class="dl-top"><span class="cat-badge ${CAT_CLASSES[d.category]}">${d.catLabel}</span></div><div class="dl-task">${d.label}</div><div class="dl-owner">Owner: ${d.owner}</div><div class="dl-desc">${d.desc}</div>${ic&&s.completedBy?`<div class="dl-meta-row"><span class="completed-by">Completed by ${s.completedBy}${s.completedAt?' - '+new Date(s.completedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'}):''}</span></div>`:''}<div class="notes-area"><textarea class="notes-input" id="note-${d.id}" rows="1" placeholder="Add a note (visible to all stakeholders)...">${note}</textarea><button class="save-btn" id="notebtn-${d.id}" onclick="saveNote('${d.id}')">Save</button></div>${note?`<div class="notes-meta" id="notemeta-${d.id}">Last updated by ${noteBy}${noteAt?' - '+noteAt:''}</div>`:`<div class="notes-meta" id="notemeta-${d.id}"></div>`}</div></div>`});});document.getElementById('deadline-list').innerHTML=html;document.querySelectorAll('.notes-input').forEach(ta=>{ta.style.height='auto';ta.style.height=Math.max(36,ta.scrollHeight)+'px';ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=Math.max(36,ta.scrollHeight)+'px';});});}
+function init(){loadLocal();const hasCfg=!!localStorage.getItem('adm_firebase_config');if(!hasCfg){document.getElementById('setupModal').classList.remove('hidden');}else{document.getElementById('setupModal').classList.add('hidden');initFirebase();}renderList();}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
